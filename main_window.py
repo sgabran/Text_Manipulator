@@ -20,7 +20,7 @@ class MainWindow:
     def __init__(self):  # instantiation function. Use root for GUI and refers to main window
 
         root = Tk()
-        root.title("Folder Maker")
+        root.title("Text Manipulator")
         self.root_frame = root
         self.user_entry = UserEntry()
         self.session_log = SessionLog(self.user_entry)
@@ -40,12 +40,14 @@ class MainWindow:
         self.file_contents_modified = ""
 
         # GUI Frames
-        # self.frame_root_title = Frame(root, highlightthickness=0)
-        # self.frame_root_file = LabelFrame(root, width=120, height=100, padx=5, pady=5, text="Session")
-        # self.frame_root_operations = LabelFrame(root, width=120, height=600, padx=5, pady=5, text="Operations")
-        self.frame_root_file = LabelFrame(root, text="Session")
-        self.frame_root_operations = LabelFrame(root, text="Operations")
-        self.frame_root_review = LabelFrame(root, width=300, height=200, padx=5, pady=5, text="Review")
+        # self.frame_root_title = Frame(root, highlightthickness=10)
+        # self.frame_file = LabelFrame(root, width=120, height=100, padx=5, pady=5, text="Session")
+        # self.frame_operations = LabelFrame(root, width=120, height=600, padx=5, pady=5, text="Operations")
+        self.frame_root_session = Frame(root)
+        self.frame_file = LabelFrame(self.frame_root_session, text="File")
+        self.frame_operations = LabelFrame(self.frame_root_session, text="Operations")
+        self.frame_root_output = Frame(root)
+        self.frame_review = LabelFrame(self.frame_root_output, width=300, height=200, padx=5, pady=5, text="Review")
 
         # Disable resizing the window
         root.resizable(False, False)
@@ -57,102 +59,103 @@ class MainWindow:
         entry_validation_positive_numbers_comma = root.register(mm.positive_numbers_or_comma)
 
         # Grids
-        # self.frame_root_title.grid      (row=0, column=0, padx=10, pady=5, ipadx=5, ipady=5)
-        self.frame_root_file.grid       (row=1, column=0, sticky="NW", padx=10, pady=(5, 5), ipadx=5, ipady=2)
-        self.frame_root_operations.grid (row=2, column=0, sticky="NW", padx=10, ipadx=5, ipady=2)
-        self.frame_root_review.grid     (row=1, column=1, sticky="E", padx=10, ipadx=5, ipady=2)
+        self.frame_root_session.grid    (row=0, column=0)
+        self.frame_root_output.grid     (row=0, column=1)
+        self.frame_file.grid       (row=0, column=0, sticky="NE", padx=10, pady=(5, 5), ipadx=5, ipady=2)
+        self.frame_operations.grid (row=1, column=0, sticky="NE", padx=10, pady=(5, 5), ipadx=5, ipady=0)
+        self.frame_review.grid     (row=0, column=1, padx=10, pady=(5, 5), ipadx=5, ipady=2)
 
         ######################################################################
         # Frame Session
 
         # Labels
-        label_replace = Label(self.frame_root_operations, text="With")
-        label_remove_between = Label(self.frame_root_operations, text="And")
-        label_parse_delim = Label(self.frame_root_operations, text="Delimiter")
-        label_parse_ncol = Label(self.frame_root_operations, text="Columns")
+        label_replace = Label(self.frame_operations, text="With")
+        label_remove_between = Label(self.frame_operations, text="And")
+        label_parse_delim = Label(self.frame_operations, text="Delimiter")
+        label_parse_ncol = Label(self.frame_operations, text="Columns")
 
         # Entries
         self.entry_file_address_entry = StringVar()
         self.entry_file_address_entry.trace("w", lambda name, index, mode, entry_file_address_entry=self.entry_file_address_entry: self.entry_update_file_address())
-        self.entry_file_address = Entry(self.frame_root_file, width=80, textvariable=self.entry_file_address_entry)
+        self.entry_file_address = Entry(self.frame_file, width=80, textvariable=self.entry_file_address_entry)
         self.entry_file_address.insert(END, os.path.normcase(FOLDER_PATH))
 
         self.entry_replace_original_entry = StringVar()
         self.entry_replace_original_entry.trace("w", lambda name, index, mode, entry_replace_original_entry=self.entry_replace_original_entry: self.entry_update_replace_original())
-        self.entry_replace_original = Entry(self.frame_root_operations, width=20, textvariable=self.entry_replace_original_entry)
+        self.entry_replace_original = Entry(self.frame_operations, width=20, textvariable=self.entry_replace_original_entry)
 
         self.entry_replace_new_entry = StringVar()
         self.entry_replace_new_entry.trace("w", lambda name, index, mode, entry_replace_new_entry=self.entry_replace_new_entry: self.entry_update_replace_new())
-        self.entry_replace_new = Entry(self.frame_root_operations, width=20, textvariable=self.entry_replace_new_entry)
+        self.entry_replace_new = Entry(self.frame_operations, width=20, textvariable=self.entry_replace_new_entry)
 
         self.entry_remove_between_1_entry = StringVar()
         self.entry_remove_between_1_entry.trace("w", lambda name, index, mode, entry_remove_between_1_entry=self.entry_remove_between_1_entry: self.entry_update_remove_between_1())
-        self.entry_remove_between_1 = Entry(self.frame_root_operations, width=20, textvariable=self.entry_remove_between_1_entry)
+        self.entry_remove_between_1 = Entry(self.frame_operations, width=20, textvariable=self.entry_remove_between_1_entry)
 
         self.entry_remove_between_2_entry = StringVar()
         self.entry_remove_between_2_entry.trace("w", lambda name, index, mode, entry_remove_between_2_entry=self.entry_remove_between_2_entry: self.entry_update_remove_between_2())
-        self.entry_remove_between_2 = Entry(self.frame_root_operations, width=20, textvariable=self.entry_remove_between_2_entry)
+        self.entry_remove_between_2 = Entry(self.frame_operations, width=20, textvariable=self.entry_remove_between_2_entry)
 
         self.entry_remove_after_entry = StringVar()
         self.entry_remove_after_entry.trace("w", lambda name, index, mode, entry_remove_after_entry=self.entry_remove_after_entry: self.entry_update_remove_after())
-        self.entry_remove_after = Entry(self.frame_root_operations, width=20, textvariable=self.entry_remove_after_entry)
+        self.entry_remove_after = Entry(self.frame_operations, width=10, textvariable=self.entry_remove_after_entry)
 
         self.entry_parse_delim_entry = StringVar()
         self.entry_parse_delim_entry.trace("w", lambda name, index, mode, entry_parse_delim_entry=self.entry_parse_delim_entry: self.entry_update_parse_delim())
-        self.entry_parse_delim = Entry(self.frame_root_operations, width=20, textvariable=self.entry_parse_delim_entry)
+        self.entry_parse_delim = Entry(self.frame_operations, width=7, textvariable=self.entry_parse_delim_entry)
 
         self.entry_parse_ncol_entry = StringVar()
         self.entry_parse_ncol_entry.trace("w", lambda name, index, mode, entry_parse_ncol_entry=self.entry_parse_ncol_entry: self.entry_update_parse_ncol())
-        self.entry_parse_ncol = Entry(self.frame_root_operations, width=20, textvariable=self.entry_parse_ncol_entry, validate="key", validatecommand=(entry_validation_positive_numbers_nonzero, '%P'))
+        self.entry_parse_ncol = Entry(self.frame_operations, width=7, textvariable=self.entry_parse_ncol_entry, validate="key", validatecommand=(entry_validation_positive_numbers_nonzero, '%P'))
 
         self.entry_split_to_columns_entry = StringVar()
         self.entry_split_to_columns_entry.trace("w", lambda name, index, mode, entry_split_to_columns_entry=self.entry_split_to_columns_entry: self.entry_update_split_ncol())
-        self.entry_split_to_columns = Entry(self.frame_root_operations, width=20, textvariable=self.entry_split_to_columns_entry, validate="key", validatecommand=(entry_validation_positive_numbers_nonzero, '%P'))
+        self.entry_split_to_columns = Entry(self.frame_operations, width=20, textvariable=self.entry_split_to_columns_entry, validate="key", validatecommand=(entry_validation_positive_numbers_nonzero, '%P'))
 
         # Buttons
-        self.button_choose_file = Button(self.frame_root_file, text="File", command=lambda: self.choose_file(), pady=0, width=10, fg='blue')
-        self.button_load = Button(self.frame_root_file, text="Load File", fg='green', command=self.load_file, pady=0, width=10)
-        self.button_open_folder = Button(self.frame_root_file, text="Open Folder", command=lambda: self.open_folder(), pady=0, width=10)
-        # self.button_undo = Button(self.frame_root_session, text="Undo", command=lambda: self.undo_move_files_to_folders(self.folders_created_fullpath), pady=0, width=10)
-        self.button_save = Button(self.frame_root_file, text="Save", fg='green', command=self.save, pady=0, width=10)
-        self.button_exit = Button(self.frame_root_file, text="Exit", fg='red', command=self.quit_program, pady=0, width=10)
+        self.button_choose_file = Button(self.frame_file, text="File", command=lambda: self.choose_file(), pady=0, width=10, fg='blue')
+        self.button_load = Button(self.frame_file, text="Load File", fg='green', command=self.load_file, pady=0, width=10)
+        self.button_open_folder = Button(self.frame_file, text="Open Folder", command=lambda: self.open_folder(), pady=0, width=10)
+        # self.button_undo = Button(self.frame_file, text="Undo", command=lambda: self.undo_move_files_to_folders(self.folders_created_fullpath), pady=0, width=10)
+        self.button_save = Button(self.frame_file, text="Save", fg='green', command=self.save, pady=0, width=10)
+        self.button_exit = Button(self.frame_file, text="Exit", fg='red', command=self.quit_program, pady=0, width=10)
 
-        self.button_replace = Button(self.frame_root_operations, text="Replace", command=lambda: self.replace_text(self.user_entry.replace_original, self.user_entry.replace_new), pady=0, width=14, fg='blue')
-        self.button_remove_between = Button(self.frame_root_operations, text="Remove Between", command=lambda: self.remove_text_between(self.user_entry.remove_between_1, self.user_entry.remove_between_2), pady=0, width=14, fg='blue')
-        self.button_remove_after = Button(self.frame_root_operations, text="Remove After", command=lambda: self.remove_after(self.user_entry.remove_after), pady=0, width=14, fg='blue')
-        self.button_parse = Button(self.frame_root_operations, text="Parse", command=lambda: self.parse(self.user_entry.parse_delim, self.user_entry.parse_ncol), pady=0, width=14, fg='blue')
-        self.button_split_to_columns = Button(self.frame_root_operations, text="Split to Columns", command=lambda: self.split_to_columns(self.user_entry.parse_ncol), pady=0, width=14, fg='blue')
+        self.button_replace = Button(self.frame_operations, text="Replace", command=lambda: self.replace_text(self.user_entry.replace_original, self.user_entry.replace_new), pady=0, width=14, fg='blue')
+        self.button_remove_between = Button(self.frame_operations, text="Remove Between", command=lambda: self.remove_text_between(self.user_entry.remove_between_1, self.user_entry.remove_between_2), pady=0, width=14, fg='blue')
+        self.button_remove_after = Button(self.frame_operations, text="Remove After", command=lambda: self.remove_after(self.user_entry.remove_after), pady=0, width=14, fg='blue')
+        self.button_parse = Button(self.frame_operations, text="Parse", command=lambda: self.parse(self.user_entry.parse_delim, self.user_entry.parse_ncol), pady=0, width=14, fg='blue')
+        self.button_split_to_columns = Button(self.frame_operations, text="Split to Columns", command=lambda: self.split_to_columns(self.user_entry.parse_ncol), pady=0, width=14, fg='blue')
 
         # Textbox
-        self.textbox_original = Text(self.frame_root_review, height=15, width=100)
-        # self.textbox_original_hscroll_bar = Scrollbar(self.frame_root_session, orient="horizontal")
+        self.textbox_original = Text(self.frame_review, height=15, width=100)
+        # self.textbox_original_hscroll_bar = Scrollbar(self.frame_file, orient="horizontal")
         # self.textbox_original_hscroll_bar.config(command=self.textbox_original.xview)
         # self.textbox_original.config(xscrollcommand=self.textbox_original_hscroll_bar.set)
-        self.textbox_original_vscroll_bar = Scrollbar(self.frame_root_review, orient="vertical")
+        self.textbox_original_vscroll_bar = Scrollbar(self.frame_review, orient="vertical")
         self.textbox_original_vscroll_bar.config(command=self.textbox_original.yview)
         self.textbox_original.config(yscrollcommand=self.textbox_original_vscroll_bar.set)
         self.textbox_row_clear(self.textbox_original, 'No Files Loaded')
 
-        self.textbox_modified = Text(self.frame_root_review, height=15, width=100)
-        self.textbox_modified_vscroll_bar = Scrollbar(self.frame_root_review, orient="vertical")
+        self.textbox_modified = Text(self.frame_review, height=15, width=100)
+        self.textbox_modified_vscroll_bar = Scrollbar(self.frame_review, orient="vertical")
         self.textbox_modified_vscroll_bar.config(command=self.textbox_modified.yview)
         self.textbox_modified.config(yscrollcommand=self.textbox_modified_vscroll_bar.set)
         self.textbox_row_clear(self.textbox_modified)
 
         # Radiobuttons
         self.radiobutton_marker_entry = IntVar(value=self.user_entry.marker_option)
-        self.radiobutton_marker_keep = Radiobutton(self.frame_root_operations, text="Keep Marker",
+        self.radiobutton_marker_keep = Radiobutton(self.frame_operations, text="Keep Marker",
                                                        command=self.update_radiobutton_marker_option,
                                                        variable=self.radiobutton_marker_entry,
                                                        value=MARKER_KEEP)
-        self.radiobutton_marker_remove = Radiobutton(self.frame_root_operations, text="Remove Marker",
+        self.radiobutton_marker_remove = Radiobutton(self.frame_operations, text="Remove Marker",
                                                        command=self.update_radiobutton_marker_option,
                                                        variable=self.radiobutton_marker_entry,
                                                        value=MARKER_REMOVE)
 
         # self.radiobutton_replace_entry = IntVar(value=self.user_entry.replace_option)
-        # self.radiobutton_replace_custom = Radiobutton(self.frame_root_operations, text="Custom", command=self.update_radiobutton_replace_option, variable=self.radiobutton_replace_entry, value=REPLACE_CUSTOM)
-        # self.radiobutton_replace_newline = Radiobutton(self.frame_root_operations, text="New Line", command=self.update_radiobutton_replace_option, variable=self.radiobutton_replace_entry, value=REPLACE_NEWLINE)
+        # self.radiobutton_replace_custom = Radiobutton(self.frame_operations, text="Custom", command=self.update_radiobutton_replace_option, variable=self.radiobutton_replace_entry, value=REPLACE_CUSTOM)
+        # self.radiobutton_replace_newline = Radiobutton(self.frame_operations, text="New Line", command=self.update_radiobutton_replace_option, variable=self.radiobutton_replace_entry, value=REPLACE_NEWLINE)
 
         # Grids
         self.textbox_original.grid(row=0, column=0)
@@ -170,13 +173,13 @@ class MainWindow:
         self.entry_remove_between_2.grid        (row=4, column=1, sticky=NW, padx=(170, 0))
         self.button_remove_after.grid           (row=5, column=0, sticky=NE)
         self.entry_remove_after.grid            (row=5, column=1, sticky=NW, padx=(5, 0))
-        self.radiobutton_marker_keep.grid       (row=5, column=1, sticky=NW, padx=(100, 0))
-        self.radiobutton_marker_remove.grid     (row=5, column=1, sticky=NW, padx=(200, 0))
+        self.radiobutton_marker_keep.grid       (row=5, column=1, sticky=NW, padx=(85, 0))
+        self.radiobutton_marker_remove.grid     (row=5, column=1, sticky=NW, padx=(180, 0))
         self.button_parse.grid                  (row=7, column=0, sticky=NE)
         label_parse_delim.grid                  (row=7, column=1, sticky=NW, padx=(5, 0))
-        self.entry_parse_delim.grid             (row=7, column=1, sticky=NW, padx=(60, 0))
-        label_parse_ncol.grid                   (row=7, column=1, sticky=NW, padx=(195, 0))
-        self.entry_parse_ncol.grid              (row=7, column=1, sticky=NW, padx=(250, 0))
+        self.entry_parse_delim.grid             (row=7, column=1, sticky=NW, padx=(62, 0))
+        label_parse_ncol.grid                   (row=7, column=1, sticky=NW, padx=(150, 0))
+        self.entry_parse_ncol.grid              (row=7, column=1, sticky=NW, padx=(208, 0))
         self.button_split_to_columns.grid       (row=8, column=0, sticky=NE)
         self.entry_split_to_columns.grid        (row=8, column=1, sticky=NW, padx=(5, 0))
 
