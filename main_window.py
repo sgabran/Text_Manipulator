@@ -5,6 +5,7 @@ import os.path
 from idlelib.tooltip import *
 from tkinter import filedialog
 from tkinter import messagebox
+import csv
 
 import sys
 import shutil
@@ -39,7 +40,9 @@ class MainWindow:
         self.finished_with_errors = 1
 
         self.file_contents_raw = ""
+        self.file_contents_raw_list = []
         self.file_contents_modified = ""
+        self.file_contents_modified_list = []
 
         # GUI Frames
         # self.frame_root_title = Frame(root, highlightthickness=10)
@@ -122,11 +125,12 @@ class MainWindow:
         self.button_save = Button(self.frame_file, text="Save", fg='green', command=self.save, pady=0, width=10)
         self.button_exit = Button(self.frame_file, text="Exit", fg='red', command=self.quit_program, pady=0, width=10)
 
-        self.button_replace = Button(self.frame_operations, text="Replace", command=lambda: self.replace_text(self.user_entry.replace_original, self.user_entry.replace_new), pady=0, width=14, fg='blue')
-        self.button_remove_between = Button(self.frame_operations, text="Remove Between", command=lambda: self.remove_text_between(self.user_entry.remove_between_1, self.user_entry.remove_between_2), pady=0, width=14, fg='blue')
+        self.button_replace = Button(self.frame_operations, text="Replace", command=lambda: self.replace_text_list(self.user_entry.replace_original, self.user_entry.replace_new), pady=0, width=14, fg='blue')
+        self.button_remove_between = Button(self.frame_operations, text="Remove Between", command=lambda: self.remove_text_between_list(self.user_entry.remove_between_1, self.user_entry.remove_between_2), pady=0, width=14, fg='blue')
         self.button_remove_after = Button(self.frame_operations, text="Remove After", command=lambda: self.remove_after(self.user_entry.remove_after), pady=0, width=14, fg='blue')
-        self.button_parse = Button(self.frame_operations, text="Parse", command=lambda: self.parse(self.user_entry.parse_delim, self.user_entry.parse_ncol), pady=0, width=14, fg='blue')
-        self.button_split_to_columns = Button(self.frame_operations, text="Split to Columns", command=lambda: self.split_to_columns(self.user_entry.parse_ncol), pady=0, width=14, fg='blue')
+        self.button_parse = Button(self.frame_operations, text="Parse", command=lambda: self.parse_list(self.user_entry.parse_delim, self.user_entry.parse_ncol), pady=0, width=14, fg='blue')
+        self.button_split_to_columns = Button(self.frame_operations, text="Split to Columns", command=lambda: self.split_to_columns_list(self.user_entry.parse_ncol), pady=0, width=14, fg='blue')
+        self.button_remove_blank_lines = Button(self.frame_operations, text="Remove Blanks", command=lambda: self.remove_blank_lines(), pady=0, width=14, fg='blue')
 
         # Textbox
         self.textbox_original = Text(self.frame_review, height=15, width=100)
@@ -177,13 +181,14 @@ class MainWindow:
         self.entry_remove_after.grid            (row=5, column=1, sticky=NW, padx=(5, 0))
         self.radiobutton_marker_keep.grid       (row=5, column=1, sticky=NW, padx=(85, 0))
         self.radiobutton_marker_remove.grid     (row=5, column=1, sticky=NW, padx=(180, 0))
-        self.button_parse.grid                  (row=7, column=0, sticky=NE)
-        label_parse_delim.grid                  (row=7, column=1, sticky=NW, padx=(5, 0))
-        self.entry_parse_delim.grid             (row=7, column=1, sticky=NW, padx=(62, 0))
-        label_parse_ncol.grid                   (row=7, column=1, sticky=NW, padx=(150, 0))
-        self.entry_parse_ncol.grid              (row=7, column=1, sticky=NW, padx=(208, 0))
-        self.button_split_to_columns.grid       (row=8, column=0, sticky=NE)
-        self.entry_split_to_columns.grid        (row=8, column=1, sticky=NW, padx=(5, 0))
+        # self.button_parse.grid                  (row=7, column=0, sticky=NE)
+        # label_parse_delim.grid                  (row=7, column=1, sticky=NW, padx=(5, 0))
+        # self.entry_parse_delim.grid             (row=7, column=1, sticky=NW, padx=(62, 0))
+        # label_parse_ncol.grid                   (row=7, column=1, sticky=NW, padx=(150, 0))
+        # self.entry_parse_ncol.grid              (row=7, column=1, sticky=NW, padx=(208, 0))
+        self.button_remove_blank_lines.grid     (row=8, column=0, sticky=NE)
+        self.button_split_to_columns.grid       (row=9, column=0, sticky=NE)
+        self.entry_split_to_columns.grid        (row=9, column=1, sticky=NW, padx=(5, 0))
 
         self.button_choose_file.grid(row=0, column=0, sticky=NW)
         self.entry_file_address.grid(row=0, column=0, sticky=NW, padx=(80, 0), pady=(2, 2))
@@ -192,7 +197,8 @@ class MainWindow:
         self.button_open_folder.grid    (row=1, column=0, sticky=NW, padx=(80, 0))
         self.button_save.grid           (row=1, column=0, sticky=NW, padx=(160, 0))
         self.button_exit.grid           (row=1, column=0, sticky=NW, padx=(240, 0))
-        # self.button_undo.grid         (row=6, column=1, sticky=NW, padx=(80, 0))
+
+        self.button_parse.config(state="disabled")
 
         # END OF FRAME #######################################################
 
@@ -245,13 +251,20 @@ class MainWindow:
             print("::user_entry.file_name: ", self.user_entry.file_name)
             print("::user_entry.file_extension: ", self.user_entry.file_extension)
             self.file_contents_raw = self.read_text_file(self.user_entry.file_address)
-            self.file_contents_modified = self.file_contents_raw
+            self.file_contents_raw_list = self.read_text_file_lines_stripline(self.user_entry.file_address)
+            self.file_contents_modified_list = self.file_contents_raw_list
+
+            print(self.file_contents_modified_list)
+            print(len(self.file_contents_modified_list))
+            # [print(item) for item in self.file_contents_modified_list]
+
             message = "Reading File\n"
             colour = 'green'
             self.session_log.write_textbox(message, colour)
             self.textbox_row_clear(self.textbox_original)
             self.textbox_row_clear(self.textbox_modified)
             self.textbox_update(self.textbox_original, self.file_contents_raw)
+            self.textbox_update_list(self.textbox_modified, self.file_contents_modified_list)
 
     def save(self):
         try:
@@ -279,9 +292,20 @@ class MainWindow:
                     self.session_log.write_textbox(str(e), "red")
                     raise e
 
-            with open(self.user_entry.file_new_address, 'w') as file:
-                file.write(self.file_contents_modified)
-            print(f'Successfully saved the string to {self.user_entry.file_new_address}')
+            ret = self.save_list_to_file(self.user_entry.file_new_folder, self.user_entry.file_new_name, self.file_contents_modified_list)
+            if ret == 1:
+                path = self.user_entry.file_new_folder + "\\" + self.user_entry.file_new_name
+                print(f'Data saved to text file: {path}')
+            elif ret == 0:
+                print(f"Failed to write text file")
+
+            ret = self.save_list_to_csv(self.user_entry.file_new_folder, self.user_entry.file_new_name, self.file_contents_modified_list)
+            if ret == 1:
+                path = self.user_entry.file_new_folder + "\\" + self.user_entry.file_new_name
+                print(f'Data saved to csv file: {path}')
+            elif ret == 0:
+                print(f"Failed to write csv file")
+
         except Exception as e:
             print(f'An error occurred: {str(e)}')
 
@@ -303,59 +327,6 @@ class MainWindow:
 
         else:
             return 1
-
-    def create_folders_and_move_files(self, filenames_list, destination_root_folder):
-        # Check if the destination folder exists
-        if not os.path.exists(destination_root_folder):
-            message = "Folder path does not exist .. Process will terminate" + '\n'
-            colour = 'brown'
-            self.session_log.write_textbox(message, colour)
-            print(message)
-            return -1
-
-        for filename in filenames_list:
-            # Create a folder using the filename in the destination folder
-            folder_name = os.path.splitext(filename)[0]
-            file_path  = os.path.join(destination_root_folder, folder_name)
-
-            # Create the folder
-            try:
-                os.makedirs(file_path )
-                self.folders_created_fullpath.append(file_path )
-                print(f"Folder created: {file_path }")
-            except FileExistsError:
-                message = f"Folder already exists: {file_path }" + '\n'
-                colour = 'brown'
-                self.session_log.write_textbox(message, colour)
-                print(message)
-
-            # Move the file to the created folder
-            try:
-                file_path = os.path.join(destination_root_folder, filename)
-                new_file_path = os.path.join(file_path , filename)
-
-                if not os.path.isfile(new_file_path):
-                    shutil.move(file_path, new_file_path)
-                    self.files_moved_fullpath.append(new_file_path)
-                    message = str(filename) + "  >>>  " + str(os.path.dirname(new_file_path)) + '\n'
-                    colour = 'black'
-                    self.session_log.write_textbox(message, colour)
-                    print(message)
-
-                else:
-                    message = f"File {file_path} Exists and Will Be Ignored" + '\n'
-                    colour = 'red'
-                    self.session_log.write_textbox(message, colour)
-                    print(message)
-
-                self.n_folders_created_fullpath = len(self.folders_created_fullpath)
-                self.n_files_moved_fullpath = len(self.files_moved_fullpath)
-
-            except FileNotFoundError:
-                message = f"File not found: {filename}" + '\n'
-                colour = 'red'
-                self.session_log.write_textbox(message, colour)
-                print(message)
 
     def open_folder(self):
         file_path = self.user_entry.folder_path
@@ -382,107 +353,6 @@ class MainWindow:
     def update_entry_file_address(self, string):
         self.entry_file_address.delete(0, END)
         self.entry_file_address.insert(0, string)
-
-    def undo_move_files_to_folders(self, folders_fullpath):
-        self.bad_undo_folder = {}
-        self.n_restored_files = 0
-        self.n_deleted_folders = 0
-        self.finished_with_errors = 1
-
-        # check if changes were done
-        if self.n_folders_created_fullpath == self.n_files_moved_fullpath == 0:
-            message = "Nothing to Undo" + '\n'
-            colour = 'red'
-            self.session_log.write_textbox(message, colour)
-            messagebox.showinfo(title="Warning", message=message)
-            return -1
-
-        message = "Start to Undo" + '\n'
-        colour = 'black'
-        self.session_log.write_textbox(message, colour)
-
-        # Check folder integrity. "folder" is full pathname
-        for folder_fullpath in folders_fullpath:
-
-            # 1. Check if folder exists
-            if os.path.exists(folder_fullpath) and os.path.isdir(folder_fullpath):
-
-                # 2. Check number of folder contents: must equal to 1.
-                # "folder_contents" is filename with extension
-                folder_contents = os.listdir(folder_fullpath)
-                if len(folder_contents) == 0:
-                    # self.bad_undo_folder.append(folder_fullpath)
-                    self.bad_undo_folder[folder_fullpath] = BAD_FOLDER_ERROR_2
-
-                elif len(folder_contents) > 1:
-                    # self.bad_undo_folder.append(folder_fullpath)
-                    self.bad_undo_folder[folder_fullpath] = BAD_FOLDER_ERROR_3
-
-                else:
-                    # 3. Check folder contents: file must have same folder name
-                    folder_name = os.path.basename(folder_fullpath)
-                    filename_without_extension = os.path.splitext(os.path.basename(folder_contents[0]))[0]
-                    if folder_name != filename_without_extension:
-                        # self.bad_undo_folder.append(folder_fullpath)
-                        self.bad_undo_folder[folder_fullpath] = BAD_FOLDER_ERROR_4
-
-                    else:
-                        filename = os.path.basename(folder_contents[0])
-                        filename_original_path = os.path.join(folder_fullpath, filename)
-                        file_destination_path = os.path.join(self.user_entry.file_address , filename)
-                        # Move file
-                        shutil.move(filename_original_path, file_destination_path)
-                        message = "Moved: " + filename_original_path + " >> to >> " + file_destination_path + '\n'
-                        colour = 'black'
-                        self.session_log.write_textbox(message, colour)
-                        self.n_restored_files += 1
-                        # Delete folder
-                        shutil.rmtree(folder_fullpath)
-                        self.n_deleted_folders += 1
-                        message = "Folder Deleted" + '\n'
-                        colour = 'black'
-                        self.session_log.write_textbox(message, colour)
-
-            else:
-                # self.bad_undo_folder.append(folder_fullpath)
-                self.bad_undo_folder[folder_fullpath] = BAD_FOLDER_ERROR_1
-
-        # List bad folders
-        if len(self.bad_undo_folder) > 0:
-            message = "Errors Found in Some Folders. Bad Folders are Ignored" + '\n'
-            colour = 'red'
-            self.session_log.write_textbox(message, colour)
-            message = "Bad Folders: " + '\n'
-            colour = 'red'
-            self.session_log.write_textbox(message, colour)
-
-            for folder, error in self.bad_undo_folder.items():
-                message = '\t' + folder + " >> " + error + '\n'
-                colour = 'red'
-                self.session_log.write_textbox(message, colour)
-
-            message = "Errors Found in Some Folders" + '\n' + "Bad Folders are Ignored" + '\n'
-            messagebox.showinfo(title="Error", message=message)
-
-        else:
-            self.finished_with_errors = 0
-
-        message = "Number of Files Restored: " + str(self.n_restored_files) + '\n'
-        colour = 'black'
-        self.session_log.write_textbox(message, colour)
-        message = "Number of Folder Deleted: " + str(self.n_deleted_folders) + '\n'
-        colour = 'black'
-        self.session_log.write_textbox(message, colour)
-
-        if not self.finished_with_errors:
-            message = "Process Finished Successfully" + '\n'
-            colour = 'green'
-            self.session_log.write_textbox(message, colour)
-
-        else:
-            message = "Process Finished with Errors" + '\n'
-            colour = 'red'
-            self.session_log.write_textbox(message, colour)
 
     def entry_update_file_address(self):
         file_address = self.entry_file_address_entry.get()
@@ -581,6 +451,28 @@ class MainWindow:
             return f"Error reading file: {str(e)}"
 
     @staticmethod
+    def read_text_file_lines(file_path):
+        try:
+            with open(file_path, 'r') as file:
+                file_contents = file.readlines()
+            return file_contents
+        except FileNotFoundError:
+            return f"File not found: {file_path}"
+        except Exception as e:
+            return f"Error reading file: {str(e)}"
+
+    @staticmethod
+    def read_text_file_lines_stripline(file_path):
+        try:
+            with open(file_path, 'r') as file:
+                lines = [line.rstrip() for line in file.readlines()]
+            return lines
+        except FileNotFoundError:
+            return f"File not found: {file_path}"
+        except Exception as e:
+            return f"Error reading file: {str(e)}"
+
+    @staticmethod
     def textbox_row_clear(*args):
         if len(args) == 1:
             textbox_handle = args[0]
@@ -600,139 +492,109 @@ class MainWindow:
         textbox_handle.insert('end', data)
         textbox_handle.configure(state='disabled')
 
-    def entry_update_rows_to_peak_raw(self):
-        try:
-            n_rows_to_peak_raw = self.entry_rows_to_peak_raw_entry.get()
-            self.user_entry.n_rows_to_peak_raw = int(n_rows_to_peak_raw)
-            print("::user_entry.n_rows_to_peak_raw: ", self.user_entry.n_rows_to_peak_raw)
-        except:
-            self.user_entry.data_start_row_index = N_ROWS_TO_PEAK_RAW
-            print("::user_entry.n_rows_to_peak_raw: ", self.user_entry.n_rows_to_peak_raw)
-        self.user_entry.n_rows_to_peak_raw = [0] * self.user_entry.n_rows_to_peak_raw
+    @staticmethod
+    def textbox_update_list(textbox_handle, data):
+        textbox_handle.configure(state='normal')
+        textbox_handle.delete('1.0', 'end')
 
-    def entry_update_rows_to_peak_modified(self):
-        try:
-            n_rows_to_peak_modified = self.entry_rows_to_peak_modified_entry.get()
-            self.user_entry.n_rows_to_peak_modified = int(n_rows_to_peak_modified)
-            print("::user_entry.n_rows_to_peak_modified: ", self.user_entry.n_rows_to_peak_modified)
-        except:
-            self.user_entry.data_start_row_index = N_ROWS_TO_PEAK_MODIFIED
-            print("::user_entry.n_rows_to_peak_modified: ", self.user_entry.n_rows_to_peak_modified)
-        self.user_entry.n_rows_to_peak_modified = [0] * self.user_entry.n_rows_to_peak_modified
+        for item in data:
+            textbox_handle.insert('end', item)
+            textbox_handle.insert('end', '\n')
+
+        textbox_handle.configure(state='disabled')
 
     def update_radiobutton_marker_option(self):
         radiobutton_marker_option = self.radiobutton_marker_entry.get()
         self.user_entry.marker_option = radiobutton_marker_option
         print("::user_entry.marker_option: ", self.user_entry.marker_option)
 
-    # def update_radiobutton_replace_option(self):
-    #     radiobutton_replace_option = self.radiobutton_replace_entry.get()
-    #     self.user_entry.replace_option = radiobutton_replace_option
-    #     print("::user_entry.replace_option: ", self.user_entry.replace_option)
-    #     if self.user_entry.replace_option == REPLACE_CUSTOM:
-    #         self.entry_replace_original.configure(state='normal')
-    #     elif self.user_entry.replace_option == REPLACE_NEWLINE:
-    #         self.entry_replace_original.configure(state='disabled')
-
     # Replace string with another
-    def replace_text(self, string_original, string_new):
+    def replace_text_list(self, string_original, string_new):
         try:
-            if string_original != "":
-                self.file_contents_modified = self.file_contents_modified.replace(string_original, string_new)
-                self.textbox_update(self.textbox_original, self.file_contents_raw)
-                self.textbox_update(self.textbox_modified, self.file_contents_modified)
-            else:
+            if string_original == "":
                 print("Invalid Entry")
+                return
+
+            self.file_contents_modified_list = [string.replace(string_original, string_new) for string in self.file_contents_modified_list]
+            self.textbox_update(self.textbox_original, self.file_contents_raw)
+            self.textbox_update_list(self.textbox_modified, self.file_contents_modified_list)
+
         except Exception as e:
             print(f'Invalid entry: {str(e)}')
 
-    # # Replace string with another
-    # def replace_text(self, string_original, string_new):
-    #     try:
-    #         if self.user_entry.replace_option == REPLACE_CUSTOM:
-    #             self.file_contents_modified = self.file_contents_modified.replace(string_original, string_new)
-    #             self.textbox_update(self.textbox_original, self.file_contents_raw)
-    #             self.textbox_update(self.textbox_modified, self.file_contents_modified)
-    #         elif self.user_entry.replace_option == REPLACE_NEWLINE:
-    #             self.file_contents_modified = self.file_contents_modified.replace("\r\n", string_new)
-    #             self.textbox_update(self.textbox_original, self.file_contents_raw)
-    #             self.textbox_update(self.textbox_modified, self.file_contents_modified)
-    #     except Exception as e:
-    #         print(f'An error occurred: {str(e)}')
-
-    def remove_text_between(self, substring1, substring2):
-        try:
-            if substring1 and substring2 != "":
-                while substring1 in self.file_contents_modified and substring2 in self.file_contents_modified:
-                    start_index = self.file_contents_modified.index(substring1)
-                    end_index = self.file_contents_modified.index(substring2)
-                    self.file_contents_modified = self.file_contents_modified[:start_index] + self.file_contents_modified[end_index + len(substring2):]
-
-                # Remove any resulting empty lines
-                lines = self.file_contents_modified.split('\n')
-                cleaned_lines = [line for line in lines if line.strip()]
-                self.file_contents_modified = '\n'.join(cleaned_lines)
-
-                self.textbox_update(self.textbox_original, self.file_contents_raw)
-                self.textbox_update(self.textbox_modified, self.file_contents_modified)
+    def remove_blank_lines(self):
+        new_list = []
+        for i in range(len(self.file_contents_modified_list)):
+            if self.file_contents_modified_list[i] == "":
+                continue
             else:
-                print("Invalid Entry")
-        except Exception as e:
-            print(f'An error occurred: {str(e)}')
+                new_list.append(self.file_contents_modified_list[i])
+        self.file_contents_modified_list = new_list
+        self.textbox_update(self.textbox_original, self.file_contents_raw)
+        self.textbox_update_list(self.textbox_modified, self.file_contents_modified_list)
+
+    def remove_text_between_list(self, substring1, substring2):
+        if substring1 == "" or substring2 == "":
+            print("Invalid Entry")
+            return
+
+        new_list = []
+        for i in range(len(self.file_contents_modified_list)):
+            line = self.file_contents_modified_list[i]
+            start_index = line.find(substring1)
+            end_index = line.find(substring2)
+            if start_index == -1 or end_index == -1:
+                new_list.append(line)
+                continue
+            new_line = line[0:start_index] + line[end_index+1:]
+            # if new_line != "\n":
+            if new_line != "":
+                new_list.append(new_line)
+
+        self.file_contents_modified_list = new_list
+        self.textbox_update(self.textbox_original, self.file_contents_raw)
+        self.textbox_update_list(self.textbox_modified, self.file_contents_modified_list)
 
     def remove_after(self, substring):
-        if substring != "":
-            if self.user_entry.marker_option is MARKER_KEEP:
-                self.remove_after_keep_marker(substring)
-            elif self.user_entry.marker_option is MARKER_REMOVE:
-                self.remove_after_remove_marker(substring)
-        else:
+        if substring == "":
             print("Invalid Entry")
+            return
 
-    def remove_after_keep_marker(self, substring):
-        # Split the original string into lines
-        lines = self.file_contents_modified.split('\n')
-        modified_lines = []
+        if self.user_entry.marker_option is MARKER_KEEP:
+            self.remove_after_keep_marker_list(substring)
+        elif self.user_entry.marker_option is MARKER_REMOVE:
+            self.remove_after_remove_marker_list(substring)
 
-        for line in lines:
-            if substring in line:
-                index = line.index(substring)
-                modified_line = line[:index + len(substring)]
+    def remove_after_keep_marker_list(self, substring):
+        new_list = []
+        # print(len(self.file_contents_modified_list))
+        for i in range(len(self.file_contents_modified_list)):
+            if substring in self.file_contents_modified_list[i]:
+                # Find index of substring
+                index = self.file_contents_modified_list[i].index(substring)
+                # Truncate string
+                new_list.append(self.file_contents_modified_list[i][:index + len(substring)])
             else:
-                modified_line = line
-
-            modified_lines.append(modified_line)
-
-        # Join the modified lines back into a string
-        self.file_contents_modified = '\n'.join(modified_lines)
-
+                new_list.append(self.file_contents_modified_list[i])
+        self.file_contents_modified_list = new_list
         self.textbox_update(self.textbox_original, self.file_contents_raw)
-        self.textbox_update(self.textbox_modified, self.file_contents_modified)
+        self.textbox_update_list(self.textbox_modified, self.file_contents_modified_list)
 
-    def remove_after_remove_marker(self, substring):
-        # Split the original string into lines
-        lines = self.file_contents_modified.split('\n')
-        modified_lines = []
-
-        for line in lines:
-            if substring in line:
-                index = line.index(substring)
-                modified_line = line[:index]
+    def remove_after_remove_marker_list(self, substring):
+        new_list = []
+        for i in range(len(self.file_contents_modified_list)):
+            if substring in self.file_contents_modified_list[i]:
+                # Find index of substring
+                index = self.file_contents_modified_list[i].index(substring)
+                # Truncate string
+                new_line = self.file_contents_modified_list[i][:index]
+                if new_line != "":
+                    new_list.append(new_line)
             else:
-                modified_line = line
-
-            modified_lines.append(modified_line)
-
-        # Join the modified lines back into a string and remove extra empty lines
-        self.file_contents_modified = '\n'.join(modified_lines).strip()
-
-        # Remove any resulting empty lines
-        lines = self.file_contents_modified.split('\n')
-        cleaned_lines = [line for line in lines if line.strip()]
-        self.file_contents_modified = '\n'.join(cleaned_lines)
-
+                new_list.append(self.file_contents_modified_list[i])
+        self.file_contents_modified_list = new_list
         self.textbox_update(self.textbox_original, self.file_contents_raw)
-        self.textbox_update(self.textbox_modified, self.file_contents_modified)
+        self.textbox_update_list(self.textbox_modified, self.file_contents_modified_list)
 
     def parse(self, delimiter, num_columns):
         try:
@@ -804,3 +666,70 @@ class MainWindow:
 
         except Exception as e:
             return str(e)
+
+    def parse_list(self, delimiter, num_columns):
+        # Check if the number of columns is valid
+        if num_columns < 1:
+            raise ValueError("Number of columns must be greater than or equal to 1")
+
+        # Initialize the output list as a list of empty lists
+        output_list = [[] for _ in range(num_columns)]
+
+        # Split the input list into columns
+        for index, item in enumerate(self.file_contents_modified_list):
+            column_index = index % num_columns
+            output_list[column_index].append(item)
+
+        # Join each column using the delimiter and return the result
+        result_list = [delimiter.join(column) for column in output_list]
+
+        self.file_contents_modified_list = result_list
+        self.textbox_update(self.textbox_original, self.file_contents_raw)
+        self.textbox_update_list(self.textbox_modified, self.file_contents_modified_list)
+
+    def split_to_columns_list(self, ncol):
+        if ncol <= 0:
+            raise ValueError("Number of columns must be greater than zero.")
+
+        # Calculate the number of rows required
+        num_rows = len(self.file_contents_modified_list) // ncol + (len(self.file_contents_modified_list) % ncol > 0)
+
+        # Initialize a 2D list to hold the rearranged data
+        rearranged_list = [[] for _ in range(num_rows)]
+
+        # Fill the 2D list with data from the input list
+        for i, item in enumerate(self.file_contents_modified_list):
+            row = i // ncol
+            rearranged_list[row].append(item)
+
+        self.file_contents_modified_list = rearranged_list
+
+        self.textbox_update(self.textbox_original, self.file_contents_raw)
+        self.textbox_update_list(self.textbox_modified, self.file_contents_modified_list)
+
+    @staticmethod
+    def save_list_to_file(file_folder, file_name, input_list):
+        try:
+            # Open file in write mode
+            file_path = file_folder + '\\' + file_name + '.txt'
+            with open(file_path, 'w') as file:
+                # Write each list element to file
+                for item in input_list:
+                    file.write(str(item) + '\n')
+            return 1
+        except Exception as e:
+            print(f'Error: {str(e)}')
+            return 0
+
+    @staticmethod
+    def save_list_to_csv(file_folder, file_name, input_list):
+        try:
+            file_path = file_folder + '\\' + file_name + '.csv'
+            with open(file_path, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                for row in input_list:
+                    writer.writerow(row)
+            return 1
+        except Exception as e:
+            print(f"Error: {e}")
+            return 0
